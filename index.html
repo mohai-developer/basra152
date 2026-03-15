@@ -248,7 +248,7 @@ function resetGame() {
     prepareRound();
 }
 
-// ── إعداد السطحة ──
+// ── إعداد اللعبة ──
 function prepareRound() {
     userHand = []; cpuHand = []; field = [];
     userBasraImgs = []; cpuBasraImgs = [];
@@ -274,7 +274,7 @@ function startNewDeck() {
             deck.push({ type: v, suit: s, img: `https://deckofcardsapi.com/static/img/${valueMap[v]}${suitMap[s]}.png` });
     deck.sort(() => Math.random() - 0.5);
 
-    // الميدان: 4 أوراق، لا ولدان
+    // الميدان: 4 أوراق، لا أولاد
     field = [];
     while (field.length < 4) {
         let c = deck.pop();
@@ -421,7 +421,8 @@ function processMove(card, player) {
             sndBasra();
             showBasraFlash('باصرة الولد! ♛');
             showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} باصرة الولد! +20 نقطة`);
-            if (player === 'cpu') speak(`باصرة الولد يا ${userName}! 👑`);
+            if (player === 'cpu') speakPhrase('cpu_basra_jack');
+            else speakPhrase('user_basra_jack');
             return;
         }
 
@@ -433,6 +434,8 @@ function processMove(card, player) {
         lastEater = player;
         sndJack();
         showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} ولد! كنس ${swept} ورقة 🔥`);
+        if (player === 'cpu') speakPhrase('cpu_jack_sweep');
+        else speakPhrase('user_eat');
         return;
     }
 
@@ -450,7 +453,8 @@ function processMove(card, player) {
             sndBasra();
             showBasraFlash('باصرة! ✨');
             showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} باصرة! +10 نقطة`);
-            if (player === 'cpu') speak(`باصرة يا ${userName}! 😤`);
+            if (player === 'cpu') speakPhrase('cpu_basra');
+            else speakPhrase('user_basra');
         } else {
             // أكل عادي بدون باصرة
             if (player === 'user') userPile.push(...captured);
@@ -459,6 +463,14 @@ function processMove(card, player) {
             lastEater = player;
             sndEat();
             showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} أكل ${captured.length} ورقة`);
+            // لو الكمبيوتر أكل ورقة ثمينة
+            if (player === 'cpu') {
+                const valuable = captured.find(c => getPoints(c) > 0 && c !== card);
+                if (valuable) speakEatValuable(valuable);
+            } else {
+                // اللاعب أكل
+                speakPhrase('user_eat');
+            }
         }
         return;
     }
@@ -482,7 +494,7 @@ function finalizeDeck() {
     const uCards = calcPilePoints(userPile);
     const cCards = calcPilePoints(cpuPile);
 
-    // المجموع الكلي للسطحة = نقاط الأوراق + الباصرات
+    // المجموع الكلي للصكة = نقاط الأوراق + الباصرات
     const uRound = uCards + roundUserBasra;
     const cRound = cCards + roundCpuBasra;
 
@@ -517,8 +529,8 @@ function showEndModal(uCards, cCards, uRound, cRound) {
 
     document.getElementById('endEmoji').textContent = uWins ? '🏆' : gameOver ? '😔' : uRound > cRound ? '🎉' : uRound < cRound ? '😅' : '🤝';
     document.getElementById('endTitle').textContent = gameOver
-        ? (uWins ? `مبروووك فزت يا ${userName}! 🏆` : `هاردلك! فاز الكمبيوتر 🤖`)
-        : (uRound > cRound ? `الصكة لك يا ${userName}! 🎉` : uRound < cRound ? 'الصكة للكمبيوتر 😅' : 'تعادل! 🤝');
+        ? (uWins ? `مبروووك فزت يا ${userName}! 🏆` : `حظ أوفر! فاز الكمبيوتر 🤖`)
+        : (uRound > cRound ? `ربحت الجولة يا ${userName}! 🎉` : uRound < cRound ? ' الكمبيوتر يربح الجولة 😅' : 'تعادل! 🤝');
     document.getElementById('endSub').textContent = `الإجمالي — أنت: ${totalScoreUser} | الكمبيوتر: ${totalScoreCpu} (الهدف: ${TARGET})`;
 
     const rows = [
@@ -527,11 +539,11 @@ function showEndModal(uCards, cCards, uRound, cRound) {
         ['2 الشرية ♣',  userPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0,  cpuPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0],
         ['3 الشرية ♣',  userPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0,  cpuPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0],
         ['10 الديمن ♦', userPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0, cpuPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0],
-        ['باصرة العادية', roundUserBasra - (roundUserBasra >= 20 ? 20 : 0), roundCpuBasra - (roundCpuBasra >= 20 ? 20 : 0)],
+        ['باصرة عادية', roundUserBasra - (roundUserBasra >= 20 ? 20 : 0), roundCpuBasra - (roundCpuBasra >= 20 ? 20 : 0)],
         ['باصرة الولد',
             (userBasraImgs.length > 0 && roundUserBasra >= 20) ? 20 : 0,
             (cpuBasraImgs.length > 0 && roundCpuBasra >= 20) ? 20 : 0],
-        ['مجموع السطحة', uRound, cRound],
+        ['مجموع الصكة', uRound, cRound],
     ];
 
     const tbody = document.getElementById('scoreTbody');
@@ -692,12 +704,105 @@ function showBasraFlash(txt) {
     setTimeout(() => { wrap.innerHTML = ''; }, 1000);
 }
 
+// ── بنك الجمل ──
+const phrases = {
+    // الكمبيوتر يسوي باصرة عادية
+    cpu_basra: [
+        "باصرة في نص عينك! 😏",
+        "شفت؟ هذي تسمى لعبة! 🃏",
+        "ولا بالأحلام تسويها مثلي 😄",
+        "واحدة صفر لي، ركز شوي! 👀",
+        "آخ يا حظك! 😂"
+    ],
+    // الكمبيوتر يسوي باصرة الولد
+    cpu_basra_jack: [
+        "باصرة بالولد يا حبيبي! 👑 هههههههههه",
+        "ولد يا ولد! راحت علومك 😂",
+        "شفت الولد؟ يقلك مع السلامة! 🃏",
+        "عشرين نقطة بضربة وحدة، تصدق؟ 😏",
+        "هذي تحتاج شطارة مو بس حظ! 👀"
+    ],
+    // الكمبيوتر يكنس بالولد
+    cpu_jack_sweep: [
+        "قش يا ولد قش! 😂",
+        "شفت الميدان؟ نظّفته بولد واحد! 🃏",
+        "تعبت تجمع وأنا أقش! 😏",
+        "الولد سلاح مو للتخويف بس! 👑",
+        "كل هالأوراق بولد واحد! 😄"
+    ],
+    // الكمبيوتر يأكل ورقة ثمينة — خاصة
+    cpu_eat_10D: ["هلا بالعشرة الحلوة! 😄"],
+    cpu_eat_2C:  ["هلا بالاثنين الحلوة! 😄"],
+    cpu_eat_3C:  ["هلا بالثلاثة الحلوة! 😄"],
+    // الكمبيوتر يأكل ورقة ثمينة — عامة
+    cpu_eat_valuable: [
+        "الإكة ما تنفع مع الذكي! 😏",
+        "شكراً على النقاط يا كريم! 🃏",
+        "راحت عليك الحلوة! ركز المرة الجاية 👀",
+        "صارت الحلوة في الجيب! 😄"
+    ],
+    // اللاعب يسوي باصرة عادية
+    user_basra: [
+        "لا تفرح، اللعبة طويلة! 😏",
+        "بسيطة خيرها في غيرها! 🃏",
+        "العبرة بالنهاية مو بالباصرة! 😄",
+        "تمتع فيها، ما راح تشوف غيرها! 😂",
+        "يصير خير، اللعبة ما خلصت! 👀"
+    ],
+    // اللاعب يسوي باصرة الولد
+    user_basra_jack: [
+        "حظ مو شطارة! 😏",
+        "استمتع، ما راح تكررها! 😂",
+        "عشرين نقطة؟ يصير خير! 👀",
+        "العبرة بالنهاية مو بالولد! 🃏",
+        "زين زين، اللعبة ما خلصت! 😄"
+    ],
+    // اللاعب يأكل (عامة — ولد أو غيره)
+    user_eat: [
+        "قش يا ولد قش! 😏",
+        "استمتع، ما راح تشوف غيرها! 😂",
+        "يصير خير، عندي ردها! 🃏",
+        "عادي اصلاً 👀",
+        "العبرة بالنهاية! 😄",
+        "ولا يهمني 😒",
+        "تستاهل 👏",
+         "حركااات 👏"
+    ]
+};
+
+// سجل آخر جملة لكل حالة عشان ما تتكرر
+const lastUsed = {};
+
+function getRandom(key) {
+    const list = phrases[key];
+    if (!list || list.length === 0) return null;
+    if (list.length === 1) return list[0];
+    let idx;
+    do { idx = Math.floor(Math.random() * list.length); }
+    while (idx === lastUsed[key]);
+    lastUsed[key] = idx;
+    return list[idx];
+}
+
+function speakPhrase(key) {
+    const txt = getRandom(key);
+    if (txt) speak(txt);
+}
+
+function speakEatValuable(card) {
+    // جمل خاصة لكل ورقة ثمينة
+    if (card.type === '10' && card.suit === '♦') speak(phrases.cpu_eat_10D[0]);
+    else if (card.type === '2' && card.suit === '♣') speak(phrases.cpu_eat_2C[0]);
+    else if (card.type === '3' && card.suit === '♣') speak(phrases.cpu_eat_3C[0]);
+    else speakPhrase('cpu_eat_valuable');
+}
+
 // ── فقاعة الكمبيوتر ──
 function speak(txt) {
     const b = document.getElementById('cpuBubble');
     b.innerText = txt;
     b.style.display = 'block';
-    setTimeout(() => b.style.display = 'none', 2600);
+    setTimeout(() => b.style.display = 'none', 2800);
 }
 
 function showMsg(t) { document.getElementById('msg').innerText = t; }
