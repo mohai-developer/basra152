@@ -30,32 +30,41 @@ body{ font-family:'Segoe UI',sans-serif; background:#121212; color:white; height
 /* ── شريط النقاط العلوي ── */
 .scores-bar{ display:flex; gap:6px; flex-shrink:0; height:64px; }
 
-/* بواصر في أركان الطاولة */
+/* بواصر أفقية على جانبي الطاولة */
 .corner-vault {
   position: absolute;
-  top: 10px;
-  width: 48px;
-  max-height: 45%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  overflow: hidden;
   z-index: 5;
   pointer-events: none;
+  max-width: 45%;
+  overflow: hidden;
 }
-.vault-right { right: 10px; }
-.vault-left  { left:  10px; }
+/* بواصر اللاعب — أسفل اليمين */
+.vault-right {
+  bottom: 110px;
+  right: 8px;
+  flex-direction: row-reverse;
+}
+/* بواصر الكمبيوتر — أعلى اليسار */
+.vault-left {
+  top: 110px;
+  left: 8px;
+  flex-direction: row;
+}
 .mini-card {
-  width: 40px; height: 28px;
+  width: 26px; height: 38px;
   border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.35);
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
-  margin-bottom: -14px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.7);
+  margin-left: -10px;
+  box-shadow: 1px 0 5px rgba(0,0,0,0.7);
 }
-.mini-card:last-child { margin-bottom: 0; }
+.vault-right .mini-card { margin-left: 0; margin-right: -10px; }
+.mini-card:last-child { margin-left: 0; margin-right: 0; }
 
 /* وسط الشريط */
 .center-panel{
@@ -138,8 +147,8 @@ body{ font-family:'Segoe UI',sans-serif; background:#121212; color:white; height
 
 <div id="nameOverlay">
   <div class="name-box">
-    <h2>🃏 تحدي الـ 152</h2>
-    <p>لعبة الكبة الخليجية</p>
+    <h2>🃏 باصرة</h2>
+    <p>الفوز على 152 نقطة </p>
     <input type="text" id="userNameInput" placeholder="اكتب اسمك..." maxlength="10">
     <button onclick="startGame()">دخول اللعبة</button>
   </div>
@@ -188,14 +197,14 @@ body{ font-family:'Segoe UI',sans-serif; background:#121212; color:white; height
 <div id="endModal">
   <div class="end-box">
     <div style="font-size:44px;margin-bottom:6px" id="endEmoji">🏆</div>
-    <h2 id="endTitle">نهاية السطحة</h2>
+    <h2 id="endTitle">نهاية الصكة</h2>
     <div class="end-sub" id="endSub"></div>
     <table class="score-tbl">
       <thead><tr><th style="text-align:right">البند</th><th id="thUser" style="color:#22c55e">أنت</th><th style="color:#f97316">الكمبيوتر</th></tr></thead>
       <tbody id="scoreTbody"></tbody>
     </table>
     <div class="end-btns">
-      <button class="end-btn end-btn-primary" id="continueBtn">سطحة جديدة ▶</button>
+      <button class="end-btn end-btn-primary" id="continueBtn">صكة جديدة ▶</button>
       <button class="end-btn end-btn-ghost" onclick="resetGame()">من الأول</button>
     </div>
   </div>
@@ -239,7 +248,7 @@ function resetGame() {
     prepareRound();
 }
 
-// ── إعداد السطحة ──
+// ── إعداد الصكة ──
 function prepareRound() {
     userHand = []; cpuHand = []; field = [];
     userBasraImgs = []; cpuBasraImgs = [];
@@ -265,7 +274,7 @@ function startNewDeck() {
             deck.push({ type: v, suit: s, img: `https://deckofcardsapi.com/static/img/${valueMap[v]}${suitMap[s]}.png` });
     deck.sort(() => Math.random() - 0.5);
 
-    // الميدان: 4 أوراق، لا ولدان
+    // الميدان: 4 أوراق، لا أولاد
     field = [];
     while (field.length < 4) {
         let c = deck.pop();
@@ -460,7 +469,7 @@ function processMove(card, player) {
     showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} رمى ${card.type}${card.suit}`);
 }
 
-// ── نهاية السطحة ──
+// ── نهاية الجولة ──
 function finalizeDeck() {
     // آخر أكلة تأخذ ما تبقى في الميدان
     if (field.length > 0) {
@@ -473,7 +482,7 @@ function finalizeDeck() {
     const uCards = calcPilePoints(userPile);
     const cCards = calcPilePoints(cpuPile);
 
-    // المجموع الكلي للسطحة = نقاط الأوراق + الباصرات
+    // المجموع الكلي للجولة = نقاط الأوراق + الباصرات
     const uRound = uCards + roundUserBasra;
     const cRound = cCards + roundCpuBasra;
 
@@ -501,7 +510,7 @@ function countSpecific(pile, type, suit) {
     return pile.filter(c => c.type === type && (!suit || c.suit === suit)).length;
 }
 
-// ── شاشة نهاية السطحة ──
+// ── شاشة نهاية الصكة ──
 function showEndModal(uCards, cCards, uRound, cRound) {
     const gameOver = totalScoreUser >= TARGET || totalScoreCpu >= TARGET;
     const uWins = totalScoreUser >= TARGET && totalScoreUser >= totalScoreCpu;
@@ -509,20 +518,20 @@ function showEndModal(uCards, cCards, uRound, cRound) {
     document.getElementById('endEmoji').textContent = uWins ? '🏆' : gameOver ? '😔' : uRound > cRound ? '🎉' : uRound < cRound ? '😅' : '🤝';
     document.getElementById('endTitle').textContent = gameOver
         ? (uWins ? `فزت يا ${userName}! 🏆` : `هاردلك! فاز الكمبيوتر 🤖`)
-        : (uRound > cRound ? `سطحة لك يا ${userName}! 🎉` : uRound < cRound ? 'سطحة للكمبيوتر 😅' : 'تعادل! 🤝');
+        : (uRound > cRound ? `الصكة لك يا ${userName}! 🎉` : uRound < cRound ? 'الصكة للكمبيوتر 😅' : 'تعادل! 🤝');
     document.getElementById('endSub').textContent = `الإجمالي — أنت: ${totalScoreUser} | الكمبيوتر: ${totalScoreCpu} (الهدف: ${TARGET})`;
 
     const rows = [
-        ['الأكات (A)', countSpecific(userPile,'A'), countSpecific(cpuPile,'A')],
-        ['الولدان (J)', countSpecific(userPile,'J'), countSpecific(cpuPile,'J')],
+        ['إكة (A)', countSpecific(userPile,'A'), countSpecific(cpuPile,'A')],
+        ['ولد (J)', countSpecific(userPile,'J'), countSpecific(cpuPile,'J')],
         ['2 الشرية ♣',  userPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0,  cpuPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0],
         ['3 الشرية ♣',  userPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0,  cpuPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0],
         ['10 الديمن ♦', userPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0, cpuPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0],
-        ['الباصرات العادية', roundUserBasra - (roundUserBasra >= 20 ? 20 : 0), roundCpuBasra - (roundCpuBasra >= 20 ? 20 : 0)],
+        ['باصرة عادية', roundUserBasra - (roundUserBasra >= 20 ? 20 : 0), roundCpuBasra - (roundCpuBasra >= 20 ? 20 : 0)],
         ['باصرة الولد',
             (userBasraImgs.length > 0 && roundUserBasra >= 20) ? 20 : 0,
             (cpuBasraImgs.length > 0 && roundCpuBasra >= 20) ? 20 : 0],
-        ['مجموع السطحة', uRound, cRound],
+        ['مجموع الصكة', uRound, cRound],
     ];
 
     const tbody = document.getElementById('scoreTbody');
@@ -542,7 +551,7 @@ function showEndModal(uCards, cCards, uRound, cRound) {
         btn.textContent = 'لعبة جديدة 🔄';
         btn.onclick = resetGame;
     } else {
-        btn.textContent = 'سطحة جديدة ▶';
+        btn.textContent = 'صكة جديدة ▶';
         btn.onclick = () => {
             dealer = dealer === 'user' ? 'cpu' : 'user';
             document.getElementById('endModal').classList.remove('show');
