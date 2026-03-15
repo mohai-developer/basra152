@@ -1,15 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- خلفية خضراء -->
-  <rect width="512" height="512" rx="80" fill="#0e5d32"/>
-  <!-- إطار ذهبي -->
-  <rect x="12" y="12" width="488" height="488" rx="72" fill="none" stroke="#ffd700" stroke-width="8"/>
-  <!-- ورقة لعب بيضاء -->
-  <rect x="106" y="60" width="300" height="340" rx="28" fill="white"/>
-  <!-- بذرة في المنتصف -->
-  <text x="256" y="290" font-size="160" text-anchor="middle" dominant-baseline="middle" fill="#c41e3a">♥</text>
-  <!-- رقم في الزوايا -->
-  <text x="140" y="135" font-size="64" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#c41e3a">A</text>
-  <text x="372" y="375" font-size="64" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#c41e3a" transform="rotate(180 372 365)">A</text>
-  <!-- اسم اللعبة -->
-  <text x="256" y="455" font-size="76" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#ffd700">باصرة</text>
+  <rect width="512" height="512" rx="100" fill="#0e5d32"/>
+  <rect x="96" y="50" width="320" height="380" rx="30" fill="white"/>
+  <text x="256" y="155" font-size="80" font-family="Arial Black,Arial" font-weight="900" text-anchor="middle" fill="#c0392b">A</text>
+  <text x="135" y="155" font-size="55" font-family="Arial" text-anchor="middle" fill="#c0392b">♠</text>
+  <text x="256" y="295" font-size="160" text-anchor="middle" fill="#c0392b">♥</text>
+  <text x="377" y="415" font-size="55" font-family="Arial" text-anchor="middle" fill="#c0392b" transform="rotate(180,377,400)">♠</text>
+  <text x="256" y="478" font-size="72" font-family="Arial" font-weight="900" text-anchor="middle" fill="#ffd700">باصرة</text>
 </svg>
