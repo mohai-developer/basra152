@@ -1,699 +1,134 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#121212">
-<meta name="apple-mobile-web-app-title" content="تحدي 152">
-<link rel="manifest" href="/manifest.json">
-<title>تحدي الـ 152</title>
-<style>
-:root { --table-color:#0e5d32; --gold:#ffd700; --accent:#00ffcc; }
-*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body{ font-family:'Segoe UI',sans-serif; background:#121212; color:white; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>واحة الهدوء المتجددة 🌲</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            height: 100vh;
+            touch-action: none;
+            font-family: 'Segoe UI', sans-serif;
+        }
 
-/* ── حاوية كاملة مع safe area ── */
-.game-layout{
-  display:flex; flex-direction:column;
-  flex:1; gap:6px;
-  padding: calc(env(safe-area-inset-top,0px) + 8px)
-           calc(env(safe-area-inset-right,0px) + 8px)
-           calc(env(safe-area-inset-bottom,0px) + 8px)
-           calc(env(safe-area-inset-left,0px) + 8px);
-}
+        /* خلفية تتغير تلقائياً */
+        #bg-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* الرابط يجلب صورة طبيعية عشوائية في كل مرة */
+            background-image: url('https://source.unsplash.com/featured/?nature,landscape,peaceful');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.5); /* تعتيم خفيف للراحة */
+            z-index: -1;
+            transition: opacity 1s ease-in;
+        }
 
-/* ── شريط النقاط العلوي ── */
-.scores-bar{ display:flex; gap:6px; flex-shrink:0; height:64px; }
+        #score-board {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
 
-/* بواصر في أركان الطاولة */
-.corner-vault {
-  position: absolute;
-  top: 10px;
-  width: 48px;
-  max-height: 45%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden;
-  z-index: 5;
-  pointer-events: none;
-}
-.vault-right { right: 10px; }
-.vault-left  { left:  10px; }
-.mini-card {
-  width: 40px; height: 28px;
-  border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background-size: cover;
-  background-position: center;
-  flex-shrink: 0;
-  margin-bottom: -14px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.7);
-}
-.mini-card:last-child { margin-bottom: 0; }
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+            border: 0.5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            /* سرعة أبطأ كما طلبت (12 ثانية للصعود) */
+            animation: floatUp 12s infinite linear;
+            cursor: pointer;
+        }
 
-/* وسط الشريط */
-.center-panel{
-  flex:1;
-  background:rgba(20,20,20,0.7);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:12px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:5px 10px; gap:3px;
-}
-.cp-row{ display:flex; width:100%; justify-content:space-between; align-items:center; }
-.cp-name{ font-size:11px; font-weight:800; color:var(--gold); }
-.cp-score{ font-size:22px; font-weight:900; color:#fff; }
-.cp-vs{ font-size:10px; color:rgba(255,255,255,0.2); }
-.cp-bar{ display:flex; width:100%; height:4px; background:rgba(255,255,255,0.07); border-radius:100px; overflow:hidden; }
-.cp-bar-u{ height:100%; background:var(--gold); transition:width .5s; }
-.cp-bar-c{ height:100%; background:#f97316; transition:width .5s; }
-
-/* ── الطاولة ── */
-.game-table{
-  background:radial-gradient(ellipse at 50% 40%,#167040,var(--table-color) 55%,#0a4226);
-  border:8px solid #3d2b1f; border-radius:24px;
-  flex:1; position:relative;
-  display:flex; flex-direction:column; justify-content:space-between;
-  padding:8px; overflow:hidden; min-height:0;
-  box-shadow:inset 0 0 60px rgba(0,0,0,0.4);
-}
-.hand{ display:flex; justify-content:center; align-items:center; gap:5px; flex-shrink:0; flex-wrap:nowrap; }
-.field-area{ flex:1; display:flex; justify-content:center; align-items:center; border:2px dashed rgba(255,255,255,0.1); border-radius:14px; margin:5px 0; background:rgba(0,0,0,0.1); min-height:0; }
-
-/* ── الأوراق ── */
-.card{ width:60px; height:88px; border-radius:7px; background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#fff; transition:.15s; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,0.4); flex-shrink:0; }
-.card.hidden{ background-image:url('https://deckofcardsapi.com/static/img/back.png') !important; cursor:default; background-color:transparent; }
-.card.playable:hover{ transform:translateY(-10px) scale(1.06); box-shadow:0 10px 20px rgba(255,215,0,0.55); border:2px solid var(--gold); }
-.card.jack-glow{ box-shadow:0 4px 18px rgba(124,106,247,0.7); border:1px solid #a78bfa; }
-
-.info-mid{ position:absolute; top:6px; left:50%; transform:translateX(-50%); z-index:10; display:flex; flex-direction:column; align-items:center; gap:2px; }
-#msg{ background:rgba(0,0,0,0.82); color:var(--gold); padding:4px 16px; border-radius:50px; border:1px solid var(--gold); font-size:13px; font-weight:700; white-space:nowrap; }
-.deck-info{ color:rgba(255,255,255,0.38); font-size:11px; }
-.deal-btn{ background:linear-gradient(135deg,#27ae60,#1e8449); color:white; padding:10px 30px; border:none; border-radius:100px; font-size:16px; font-weight:900; cursor:pointer; display:none; }
-#cpuBubble{ position:absolute; top:108px; left:50%; transform:translateX(-50%); background:#fff; color:#000; padding:8px 14px; border-radius:12px; font-weight:900; font-size:12px; display:none; z-index:200; border:2px solid #000; white-space:nowrap; }
-#cpuBubble::after{ content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:#000; }
-#turnIndicator{ position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:10px; color:rgba(255,255,255,0.22); font-weight:700; }
-#turnIndicator.my-turn{ color:#22c55e; }
-
-/* ── فلاش الباصرة ── */
-#basraFlash{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:500; pointer-events:none; }
-.basra-text{ font-size:60px; font-weight:900; color:var(--gold); text-shadow:0 0 40px rgba(255,215,0,0.9); animation:bAnim .9s ease both; }
-@keyframes bAnim{ 0%{opacity:0;transform:scale(.4) rotate(-8deg)} 35%{opacity:1;transform:scale(1.15) rotate(3deg)} 65%{transform:scale(.95)} 100%{opacity:0;transform:scale(1.05)} }
-
-/* ── شاشة الاسم ── */
-#nameOverlay{ position:fixed; inset:0; background:radial-gradient(ellipse at center,#1a1a2e,#000); display:flex; justify-content:center; align-items:center; z-index:2000; padding:20px; }
-.name-box{ background:#1e1e1e; padding:32px 26px; border-radius:22px; border:2px solid var(--gold); box-shadow:0 0 40px rgba(255,215,0,0.15); max-width:300px; width:100%; text-align:center; }
-.name-box h2{ color:var(--gold); font-size:24px; margin-bottom:6px; }
-.name-box p{ color:rgba(255,255,255,0.3); font-size:12px; margin-bottom:18px; }
-.name-box input{ padding:11px; font-size:17px; border-radius:10px; width:100%; text-align:center; border:1.5px solid rgba(255,215,0,0.35); background:#2a2a2a; color:white; margin-bottom:14px; outline:none; }
-.name-box button{ width:100%; padding:12px; font-weight:900; font-size:16px; background:linear-gradient(135deg,var(--gold),#b8960c); border:none; border-radius:100px; cursor:pointer; color:#000; font-family:inherit; }
-
-/* ── شاشة النهاية ── */
-#endModal{ position:fixed; inset:0; background:rgba(0,0,0,0.88); display:none; align-items:center; justify-content:center; z-index:600; padding:20px; }
-#endModal.show{ display:flex; }
-.end-box{ background:#1a1a1a; border:2px solid rgba(255,215,0,0.35); border-radius:22px; padding:22px 18px; max-width:380px; width:100%; animation:popUp .4s cubic-bezier(.34,1.56,.64,1) both; }
-@keyframes popUp{ from{opacity:0;transform:scale(.8)} to{opacity:1;transform:scale(1)} }
-.end-box h2{ color:var(--gold); font-size:21px; margin-bottom:3px; }
-.end-sub{ color:rgba(255,255,255,0.38); font-size:12px; margin-bottom:14px; }
-.score-tbl{ width:100%; border-collapse:collapse; margin-bottom:14px; font-size:13px; }
-.score-tbl th{ color:rgba(255,255,255,0.38); font-size:10px; font-weight:700; padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.08); }
-.score-tbl td{ padding:6px 6px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.score-tbl td:first-child{ color:rgba(255,255,255,0.5); text-align:right; font-size:12px; }
-.score-tbl td:not(:first-child){ font-weight:800; font-size:14px; text-align:center; }
-.score-tbl tr.total-row td{ font-weight:900; font-size:15px; border-top:1px solid rgba(255,215,0,0.25); border-bottom:none; padding-top:10px; }
-.end-btns{ display:flex; gap:8px; }
-.end-btn{ flex:1; padding:11px; border:none; border-radius:100px; font-size:14px; font-weight:900; cursor:pointer; font-family:inherit; transition:transform .15s; }
-.end-btn:hover{ transform:scale(1.03); }
-.end-btn-primary{ background:linear-gradient(135deg,var(--gold),#b8960c); color:#000; }
-.end-btn-ghost{ background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.1) !important; }
-</style>
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) scale(0.8); opacity: 0; }
+            20% { opacity: 0.6; }
+            100% { transform: translateY(-20vh) scale(1.1); opacity: 0; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="nameOverlay">
-  <div class="name-box">
-    <h2>🃏 تحدي الـ 152</h2>
-    <p>لعبة الكبة الخليجية</p>
-    <input type="text" id="userNameInput" placeholder="اكتب اسمك..." maxlength="10">
-    <button onclick="startGame()">دخول اللعبة</button>
-  </div>
-</div>
+    <div id="bg-image"></div>
+    <div id="score-board">النقاط: <span id="score">0</span></div>
 
-<div class="game-layout">
+    <script>
+        let score = 0;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  <div class="scores-bar">
-    <div class="center-panel">
-      <div class="cp-row">
-        <span class="cp-name" id="cpNameUser">أنت</span>
-        <span class="cp-name">الكمبيوتر</span>
-      </div>
-      <div class="cp-row">
-        <span class="cp-score" id="cpScoreUser">0</span>
-        <span class="cp-vs">vs</span>
-        <span class="cp-score" id="cpScoreCpu">0</span>
-      </div>
-      <div class="cp-bar">
-        <div class="cp-bar-u" id="cpBarUser" style="width:0%"></div>
-        <div class="cp-bar-c" id="cpBarCpu" style="width:0%"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-table">
-    <div class="info-mid">
-      <div id="msg">استعد!</div>
-      <div class="deck-info">🂠 <span id="deckCount">0</span> ورقة</div>
-    </div>
-    <div id="cpuBubble"></div>
-    <!-- بواصر في أركان الطاولة -->
-    <div class="corner-vault vault-right" id="userBasraVault"></div>
-    <div class="corner-vault vault-left"  id="cpuBasraVault"></div>
-    <div class="hand" id="cpuHand"></div>
-    <div class="field-area" id="field"></div>
-    <button id="dealBtn" class="deal-btn" onclick="startNewDeck()">وزّع 🎴</button>
-    <div class="hand" id="userHand"></div>
-    <div id="turnIndicator"></div>
-  </div>
-
-</div>
-
-<div id="basraFlash"></div>
-
-<div id="endModal">
-  <div class="end-box">
-    <div style="font-size:44px;margin-bottom:6px" id="endEmoji">🏆</div>
-    <h2 id="endTitle">نهاية السطحة</h2>
-    <div class="end-sub" id="endSub"></div>
-    <table class="score-tbl">
-      <thead><tr><th style="text-align:right">البند</th><th id="thUser" style="color:#22c55e">أنت</th><th style="color:#f97316">الكمبيوتر</th></tr></thead>
-      <tbody id="scoreTbody"></tbody>
-    </table>
-    <div class="end-btns">
-      <button class="end-btn end-btn-primary" id="continueBtn">سطحة جديدة ▶</button>
-      <button class="end-btn end-btn-ghost" onclick="resetGame()">من الأول</button>
-    </div>
-  </div>
-</div>
-
-<script>
-
-// ── الثوابت ──
-const TARGET = 152;
-const suitMap = {'♦':'D','♣':'C','♥':'H','♠':'S'};
-const valueMap = {'2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','10':'0','J':'J','Q':'Q','K':'K','A':'A'};
-
-// ── الحالة ──
-let userName = "أنت";
-let totalScoreUser = 0, totalScoreCpu = 0;
-let userBasraImgs = [], cpuBasraImgs = [];
-let deck = [], userHand = [], cpuHand = [], field = [];
-let lastEater = "user";
-let isUserTurn = false;
-let dealer = "user";
-let userPile = [], cpuPile = [];
-let roundUserBasra = 0, roundCpuBasra = 0;
-let aiLock = false;
-
-// ── بداية اللعبة ──
-function startGame() {
-    const n = document.getElementById('userNameInput').value.trim();
-    userName = n || "أنت";
-    const dn=document.getElementById('displayName'); if(dn) dn.innerText=userName;
-    const th=document.getElementById('thUser'); if(th) th.innerText=userName;
-    const cn=document.getElementById('cpNameUser'); if(cn) cn.innerText=userName;
-    document.getElementById('nameOverlay').style.display = 'none';
-    prepareRound();
-}
-
-function resetGame() {
-    totalScoreUser = 0; totalScoreCpu = 0;
-    dealer = "user";
-    document.getElementById('endModal').classList.remove('show');
-    updateScoreBars();
-    prepareRound();
-}
-
-// ── إعداد السطحة ──
-function prepareRound() {
-    userHand = []; cpuHand = []; field = [];
-    userBasraImgs = []; cpuBasraImgs = [];
-    userPile = []; cpuPile = [];
-    roundUserBasra = 0; roundCpuBasra = 0;
-    aiLock = false;
-    render();
-
-    if (dealer === "user") {
-        document.getElementById('dealBtn').style.display = 'block';
-        showMsg("التوزيع عندك..");
-    } else {
-        document.getElementById('dealBtn').style.display = 'none';
-        setTimeout(startNewDeck, 800);
-    }
-}
-
-function startNewDeck() {
-    document.getElementById('dealBtn').style.display = 'none';
-    deck = [];
-    for (let s in suitMap)
-        for (let v in valueMap)
-            deck.push({ type: v, suit: s, img: `https://deckofcardsapi.com/static/img/${valueMap[v]}${suitMap[s]}.png` });
-    deck.sort(() => Math.random() - 0.5);
-
-    // الميدان: 4 أوراق، لا ولدان
-    field = [];
-    while (field.length < 4) {
-        let c = deck.pop();
-        if (c.type === 'J') deck.unshift(c); else field.push(c);
-    }
-
-    // غير الموزع يبدأ أولاً
-    isUserTurn = (dealer === 'cpu');
-    dealHands();
-    render();
-    updateTurnIndicator();
-    showMsg(isUserTurn ? "دورك!" : "الكمبيوتر يبدأ..");
-    if (!isUserTurn) scheduleAI();
-}
-
-function dealHands() {
-    for (let i = 0; i < 4; i++) {
-        if (deck.length > 0) userHand.push(deck.pop());
-        if (deck.length > 0) cpuHand.push(deck.pop());
-    }
-}
-
-// ── حركة اللاعب ──
-function playCard(index) {
-    if (!isUserTurn || aiLock) return;
-    const card = userHand.splice(index, 1)[0];
-    processMove(card, "user");
-    isUserTurn = false;
-    render();
-    updateTurnIndicator();
-    checkNextAction();
-}
-
-// ── ذكاء اصطناعي محسّن ──
-function scheduleAI() {
-    if (isUserTurn || aiLock) return;
-    aiLock = true;
-    setTimeout(() => { aiMove(); }, 1000);
-}
-
-function aiMove() {
-    if (isUserTurn || cpuHand.length === 0) return;
-    const topCard = field.length > 0 ? field[field.length - 1] : null;
-    let chosen = -1;
-
-    // حساب قيمة الميدان
-    const fieldValue = field.reduce((s, c) => s + getPoints(c), 0);
-    // هل الورقة ثمينة؟
-    const isValuable = c => getPoints(c) > 0;
-
-    // ١. باصرة الولد: ميدان فيه ولد وحده → 20 نقطة (دايماً يستحق)
-    if (chosen === -1 && topCard && topCard.type === 'J' && field.length === 1) {
-        const jIdx = cpuHand.findIndex(c => c.type === 'J');
-        if (jIdx !== -1) chosen = jIdx;
-    }
-
-    // ٢. باصرة عادية: ميدان فيه ورقة وحدة ومشابهة (بدون ولد)
-    if (chosen === -1 && topCard && topCard.type !== 'J' && field.length === 1) {
-        const idx = cpuHand.findIndex(c => c.type === topCard.type && c.type !== 'J');
-        if (idx !== -1) chosen = idx;
-    }
-
-    // ٣. أكل عادي: لو الميدان فيه أوراق ثمينة أو كثيرة تستحق
-    if (chosen === -1 && topCard && topCard.type !== 'J' && field.length > 1) {
-        const matchIdx = cpuHand.findIndex(c => c.type === topCard.type && c.type !== 'J');
-        if (matchIdx !== -1) {
-            // آكل لو الميدان يستحق (فيه أوراق ثمينة أو 3+ أوراق)
-            if (fieldValue > 0 || field.length >= 3) chosen = matchIdx;
-        }
-    }
-
-    // ٤. ولد يكنس الميدان — بس لو الميدان يستحق فعلاً
-    if (chosen === -1 && field.length >= 3 && fieldValue >= 2) {
-        const jIdx = cpuHand.findIndex(c => c.type === 'J');
-        if (jIdx !== -1) chosen = jIdx;
-    }
-
-    // ٥. رمي آمن: لا تعطي باصرة، لا ترمي أوراق ثمينة إلا مجبور
-    if (chosen === -1) {
-        const avoidType = (field.length === 1 && topCard) ? topCard.type : null;
-        // رتّب البدائل: الأقل قيمة أولاً، وتجنب المشابه للميدان
-        const candidates = cpuHand
-            .map((c, i) => ({ c, i }))
-            .filter(({ c }) => c.type !== 'J' && c.type !== avoidType)
-            .sort((a, b) => getPoints(a.c) - getPoints(b.c)); // الأقل ثمناً أولاً
-        if (candidates.length > 0) chosen = candidates[0].i;
-    }
-
-    // ٦. مجبور — ارمي الأقل ضرراً
-    if (chosen === -1) {
-        const fallback = cpuHand
-            .map((c, i) => ({ c, i }))
-            .sort((a, b) => getPoints(a.c) - getPoints(b.c));
-        chosen = fallback[0].i;
-    }
-
-    const card = cpuHand.splice(chosen, 1)[0];
-    processMove(card, "cpu");
-    aiLock = false;
-    isUserTurn = true;
-    render();
-    updateTurnIndicator();
-    checkNextAction();
-}
-
-function checkNextAction() {
-    if (userHand.length === 0 && cpuHand.length === 0) {
-        if (deck.length >= 2) {
-            setTimeout(() => {
-                dealHands();
-                render();
-                showMsg(isUserTurn ? "دورك!" : "دور الكمبيوتر..");
-                if (!isUserTurn) scheduleAI();
-            }, 700);
-        } else {
-            setTimeout(finalizeDeck, 700);
-        }
-    } else {
-        showMsg(isUserTurn ? "دورك!" : "دور الكمبيوتر..");
-        if (!isUserTurn) scheduleAI();
-    }
-}
-
-// ── المنطق الأساسي للأكل ──
-function processMove(card, player) {
-    const topCard = field.length > 0 ? field[field.length - 1] : null;
-
-    // ── الولد ──
-    if (card.type === 'J') {
-        if (field.length === 0) {
-            // ولد في ميدان فارغ: يجلس
-            field.push(card);
-            showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} رمى الولد في ميدان فارغ`);
-            return;
+        // صوت رنين اليوجا (Zen Chime)
+        function playYogaSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            // ترددات هارمونية مريحة
+            const frequencies = [440, 523.25, 659.25, 783.99]; 
+            const freq = frequencies[Math.floor(Math.random() * frequencies.length)];
+            
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
         }
 
-        // باصرة الولد: الميدان فيه ولد واحد فقط
-        if (field.length === 1 && topCard.type === 'J') {
-            const earned = 20;
-            if (player === 'user') { userPile.push(...field, card); roundUserBasra += earned; userBasraImgs.push(card.img); }
-            else                   { cpuPile.push(...field, card);  roundCpuBasra  += earned; cpuBasraImgs.push(card.img); }
-            field = [];
-            lastEater = player;
-            sndBasra();
-            showBasraFlash('باصرة الولد! ♛');
-            showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} باصرة الولد! +20 نقطة`);
-            if (player === 'cpu') speak(`باصرة الولد يا ${userName}! 👑`);
-            return;
+        function createBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 60 + 40 + 'px';
+            bubble.style.width = size;
+            bubble.style.height = size;
+            bubble.style.left = Math.random() * (window.innerWidth - 60) + 'px';
+            
+            document.body.appendChild(bubble);
+            
+            bubble.addEventListener('pointerdown', () => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                playYogaSound();
+                score++;
+                document.getElementById('score').innerText = score;
+                
+                // تأثير تلاشي ناعم عند الفرقعة
+                bubble.style.transition = 'all 0.4s ease';
+                bubble.style.transform = 'scale(1.5)';
+                bubble.style.opacity = '0';
+                setTimeout(() => bubble.remove(), 400);
+            });
+
+            setTimeout(() => { if(bubble.parentNode) bubble.remove(); }, 12000);
         }
 
-        // كنس عادي بالولد (بدون باصرة)
-        const swept = field.length;
-        if (player === 'user') userPile.push(...field, card);
-        else                   cpuPile.push(...field, card);
-        field = [];
-        lastEater = player;
-        sndJack();
-        showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} ولد! كنس ${swept} ورقة 🔥`);
-        return;
-    }
+        // إنشاء بالونات بمعدل هادئ
+        setInterval(createBubble, 1500);
 
-    // ── أكل عادي: ورقة تشبه الورقة العليا ──
-    if (topCard && topCard.type !== 'J' && card.type === topCard.type) {
-        const captured = [...field, card];
-
-        if (field.length === 1) {
-            // باصرة عادية: +10
-            const earned = 10;
-            if (player === 'user') { userPile.push(...captured); roundUserBasra += earned; userBasraImgs.push(card.img); }
-            else                   { cpuPile.push(...captured);  roundCpuBasra  += earned; cpuBasraImgs.push(card.img); }
-            field = [];
-            lastEater = player;
-            sndBasra();
-            showBasraFlash('باصرة! ✨');
-            showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} باصرة! +10 نقطة`);
-            if (player === 'cpu') speak(`باصرة يا ${userName}! 😤`);
-        } else {
-            // أكل عادي بدون باصرة
-            if (player === 'user') userPile.push(...captured);
-            else                   cpuPile.push(...captured);
-            field = [];
-            lastEater = player;
-            sndEat();
-            showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} أكل ${captured.length} ورقة`);
-        }
-        return;
-    }
-
-    // ── لا أكل: الورقة تذهب للميدان ──
-    field.push(card);
-    sndCard();
-    showMsg(`${player === 'user' ? userName : 'الكمبيوتر'} رمى ${card.type}${card.suit}`);
-}
-
-// ── نهاية السطحة ──
-function finalizeDeck() {
-    // آخر أكلة تأخذ ما تبقى في الميدان
-    if (field.length > 0) {
-        if (lastEater === 'user') userPile.push(...field);
-        else                      cpuPile.push(...field);
-        field = [];
-    }
-
-    // حساب نقاط الأوراق
-    const uCards = calcPilePoints(userPile);
-    const cCards = calcPilePoints(cpuPile);
-
-    // المجموع الكلي للسطحة = نقاط الأوراق + الباصرات
-    const uRound = uCards + roundUserBasra;
-    const cRound = cCards + roundCpuBasra;
-
-    totalScoreUser += uRound;
-    totalScoreCpu  += cRound;
-
-    render();
-    updateScoreBars();
-    showEndModal(uCards, cCards, uRound, cRound);
-}
-
-function calcPilePoints(pile) {
-    return pile.reduce((sum, c) => sum + getPoints(c), 0);
-}
-
-function getPoints(card) {
-    if (card.type === 'J' || card.type === 'A') return 1;
-    if (card.type === '2' && card.suit === '♣') return 2;
-    if (card.type === '3' && card.suit === '♣') return 3;
-    if (card.type === '10' && card.suit === '♦') return 3;
-    return 0;
-}
-
-function countSpecific(pile, type, suit) {
-    return pile.filter(c => c.type === type && (!suit || c.suit === suit)).length;
-}
-
-// ── شاشة نهاية السطحة ──
-function showEndModal(uCards, cCards, uRound, cRound) {
-    const gameOver = totalScoreUser >= TARGET || totalScoreCpu >= TARGET;
-    const uWins = totalScoreUser >= TARGET && totalScoreUser >= totalScoreCpu;
-
-    document.getElementById('endEmoji').textContent = uWins ? '🏆' : gameOver ? '😔' : uRound > cRound ? '🎉' : uRound < cRound ? '😅' : '🤝';
-    document.getElementById('endTitle').textContent = gameOver
-        ? (uWins ? `فزت يا ${userName}! 🏆` : `هاردلك! فاز الكمبيوتر 🤖`)
-        : (uRound > cRound ? `سطحة لك يا ${userName}! 🎉` : uRound < cRound ? 'سطحة للكمبيوتر 😅' : 'تعادل! 🤝');
-    document.getElementById('endSub').textContent = `الإجمالي — أنت: ${totalScoreUser} | الكمبيوتر: ${totalScoreCpu} (الهدف: ${TARGET})`;
-
-    const rows = [
-        ['الأكات (A)', countSpecific(userPile,'A'), countSpecific(cpuPile,'A')],
-        ['الولدان (J)', countSpecific(userPile,'J'), countSpecific(cpuPile,'J')],
-        ['2 الشرية ♣',  userPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0,  cpuPile.some(c=>c.type==='2'&&c.suit==='♣') ? 2 : 0],
-        ['3 الشرية ♣',  userPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0,  cpuPile.some(c=>c.type==='3'&&c.suit==='♣') ? 3 : 0],
-        ['10 الديمن ♦', userPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0, cpuPile.some(c=>c.type==='10'&&c.suit==='♦') ? 3 : 0],
-        ['الباصرات العادية', roundUserBasra - (roundUserBasra >= 20 ? 20 : 0), roundCpuBasra - (roundCpuBasra >= 20 ? 20 : 0)],
-        ['باصرة الولد',
-            (userBasraImgs.length > 0 && roundUserBasra >= 20) ? 20 : 0,
-            (cpuBasraImgs.length > 0 && roundCpuBasra >= 20) ? 20 : 0],
-        ['مجموع السطحة', uRound, cRound],
-    ];
-
-    const tbody = document.getElementById('scoreTbody');
-    tbody.innerHTML = rows.map((r, i) => {
-        const isTotal = i === rows.length - 1;
-        const uColor = r[1] > r[2] ? '#22c55e' : r[1] < r[2] ? '#f97316' : '#fff';
-        const cColor = r[2] > r[1] ? '#22c55e' : r[2] < r[1] ? '#f97316' : '#fff';
-        return `<tr class="${isTotal ? 'total-row' : ''}">
-            <td>${r[0]}</td>
-            <td style="color:${uColor}">${r[1]}</td>
-            <td style="color:${cColor}">${r[2]}</td>
-        </tr>`;
-    }).join('');
-
-    const btn = document.getElementById('continueBtn');
-    if (gameOver) {
-        btn.textContent = 'لعبة جديدة 🔄';
-        btn.onclick = resetGame;
-    } else {
-        btn.textContent = 'سطحة جديدة ▶';
-        btn.onclick = () => {
-            dealer = dealer === 'user' ? 'cpu' : 'user';
-            document.getElementById('endModal').classList.remove('show');
-            prepareRound();
+        // لتغيير الصورة في كل مرة يفتح فيها الرابط، نضطر لإضافة رقم عشوائي للرابط
+        window.onload = () => {
+            const bg = document.getElementById('bg-image');
+            bg.style.backgroundImage = `url('https://picsum.photos/${window.innerWidth}/${window.innerHeight}?nature,water&sig=${Math.random()}')`;
         };
-    }
-
-    document.getElementById('endModal').classList.add('show');
-}
-
-// ── رسم اللعبة ──
-function render() {
-    renderArea('userHand', userHand, true);
-    renderArea('cpuHand', cpuHand, false, true);
-    renderField();
-    renderVault('userBasraVault', userBasraImgs);
-    renderVault('cpuBasraVault', cpuBasraImgs);
-    const tu = document.getElementById('totalUser'); if(tu) tu.innerText = totalScoreUser;
-    const tc = document.getElementById('totalCpu');  if(tc) tc.innerText = totalScoreCpu;
-    document.getElementById('deckCount').innerText = deck.length;
-}
-
-function renderArea(id, cards, clickable, hidden = false) {
-    const area = document.getElementById(id);
-    if (!area) return;
-    area.innerHTML = '';
-    cards.forEach((c, i) => {
-        const div = document.createElement('div');
-        div.className = 'card' + (hidden ? ' hidden' : '');
-        if (!hidden) {
-            div.style.backgroundImage = `url('${c.img}')`;
-            if (c.type === 'J') div.classList.add('jack-glow');
-        }
-        if (clickable && isUserTurn) {
-            div.classList.add('playable');
-            div.onclick = () => playCard(i);
-        }
-        area.appendChild(div);
-    });
-}
-
-function renderField() {
-    const area = document.getElementById('field');
-    area.innerHTML = '';
-    if (field.length === 0) {
-        area.innerHTML = '<div style="color:rgba(255,255,255,0.18);font-size:13px;font-weight:700">الميدان فارغ</div>';
-        return;
-    }
-
-    const topCard = field[field.length - 1]; // آخر ورقة دائماً
-    const stack = document.createElement('div');
-    stack.style.cssText = 'position:relative;width:85px;height:125px;margin:auto;';
-
-    // أوراق خلفية مقلوبة (بحد أقصى 5 خلفيات)
-    const ghostCount = Math.min(field.length - 1, 5);
-    for (let i = 0; i < ghostCount; i++) {
-        const ghost = document.createElement('div');
-        ghost.className = 'card hidden';
-        // كل ورقة خلفية تنزاح 4px بس — ثابتة وصغيرة
-        ghost.style.cssText = 'position:absolute;top:' + (i * 4) + 'px;left:' + (-i * 4) + 'px;z-index:' + i + ';cursor:default;';
-        stack.appendChild(ghost);
-    }
-
-    // آخر ورقة — دايماً ظاهرة فوق الكل
-    const top = document.createElement('div');
-    top.className = 'card' + (topCard.type === 'J' ? ' jack-glow' : '');
-    top.style.cssText = 'position:absolute;top:' + (ghostCount * 4) + 'px;left:' + (-ghostCount * 4) + 'px;z-index:10;cursor:default;background-image:url(\'' + topCard.img + '\');';
-
-    // شارة العدد
-    if (field.length > 1) {
-        const badge = document.createElement('div');
-        badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#e74c3c;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:20;border:2px solid #fff;pointer-events:none;';
-        badge.textContent = field.length;
-        top.appendChild(badge);
-    }
-
-    stack.appendChild(top);
-    area.appendChild(stack);
-}
-
-function renderVault(id, imgs) {
-    const v = document.getElementById(id);
-    if (!v) return;
-    v.innerHTML = '';
-    imgs.forEach(url => {
-        const div = document.createElement('div');
-        div.className = 'mini-card';
-        div.style.backgroundImage = `url('${url}')`;
-        v.appendChild(div);
-    });
-}
-
-function updateScoreBars() {
-    const u = Math.min(100,(totalScoreUser/TARGET)*100)+'%';
-    const c = Math.min(100,(totalScoreCpu/TARGET)*100)+'%';
-    const bu = document.getElementById('barUser');    if(bu) bu.style.width = u;
-    const bc = document.getElementById('barCpu');     if(bc) bc.style.width = c;
-    const cu = document.getElementById('cpBarUser');  if(cu) cu.style.width = u;
-    const cc = document.getElementById('cpBarCpu');   if(cc) cc.style.width = c;
-    const su = document.getElementById('cpScoreUser'); if(su) su.innerText = totalScoreUser;
-    const sc = document.getElementById('cpScoreCpu');  if(sc) sc.innerText = totalScoreCpu;
-}
-
-function updateTurnIndicator() {
-    const el = document.getElementById('turnIndicator');
-    if(el) el.textContent = isUserTurn ? `⬆ دورك يا ${userName}` : '⬆ دور الكمبيوتر';
-    if(el) el.className = isUserTurn ? 'my-turn' : '';
-}
-
-// ── أصوات بسيطة (Web Audio API - بدون ملفات خارجية) ──
-let audioCtx;
-function getAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return audioCtx;
-}
-function playSound(freq, dur, type, vol) {
-    try {
-        const ctx = getAudio();
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type = type || 'sine';
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(vol || 0.2, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-        o.start(); o.stop(ctx.currentTime + dur);
-    } catch(e) {}
-}
-function sndCard()   { playSound(440, 0.08, 'sine', 0.15); }
-function sndEat()    { playSound(520, 0.06, 'sine', 0.18); setTimeout(()=>playSound(660, 0.1, 'sine', 0.15), 60); }
-function sndBasra()  { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playSound(f,0.12,'sine',0.2),i*80)); }
-function sndJack()   { playSound(300, 0.08, 'sawtooth', 0.1); setTimeout(()=>playSound(500, 0.2, 'sine', 0.2), 80); }
-
-// ── أصوات بسيطة ──
-function showBasraFlash(txt) {
-    const wrap = document.getElementById('basraFlash');
-    wrap.innerHTML = `<div class="basra-text">${txt}</div>`;
-    setTimeout(() => { wrap.innerHTML = ''; }, 1000);
-}
-
-// ── فقاعة الكمبيوتر ──
-function speak(txt) {
-    const b = document.getElementById('cpuBubble');
-    b.innerText = txt;
-    b.style.display = 'block';
-    setTimeout(() => b.style.display = 'none', 2600);
-}
-
-function showMsg(t) { document.getElementById('msg').innerText = t; }
-
-// ── تشغيل أولي ──
-render();
-
-</script>
+    </script>
 </body>
 </html>
