@@ -556,7 +556,7 @@ body{ font-family:'Tajawal',sans-serif; background:#121212; color:white; height:
   <div class="spark" style="top:90%;left:40%;animation-delay:2.2s;"></div>
   <div class="spark" style="top:45%;left:5%;animation-delay:0.9s;background:#ff6b6b;"></div>
 
-  <div class="splash-content">
+  <div class="splash-content" id="splashContent">
     <div class="logo-frame">
       <div class="star-8"></div>
       <div class="logo-icon">🃏</div>
@@ -878,15 +878,22 @@ let roundUserBasra = 0, roundCpuBasra = 0;
 let aiLock = false;
 let pendingEndModal = null; // لتخزين بيانات النهاية
 
-// ════ صوت البداية — يشتغل عند أول لمسة على شاشة البداية ════
+// ════ صوت البداية — مرافق لانبثاق شاشة البداية ════
+let splashSoundPlayed = false;
 function initSplashMusic() {
+  if (splashSoundPlayed) return;
+  splashSoundPlayed = true;
   playSplashMusic();
-  document.removeEventListener('click', initSplashMusic);
-  document.removeEventListener('touchstart', initSplashMusic);
 }
-// الاستماع فقط على شاشة البداية
-document.addEventListener('click', initSplashMusic);
-document.addEventListener('touchstart', initSplashMusic);
+// الطريقة الأدق: عند بداية أنيميشن الانبثاق (splashEntry = 1.2s)
+// نشغل الصوت في منتصفه تماماً
+document.getElementById('splashContent').addEventListener('animationstart', () => {
+  setTimeout(initSplashMusic, 200); // بعد 200ms من بداية الانبثاق
+}, { once: true });
+// احتياطي جوال: أول لمسة على الشاشة قبل الضغط
+const splashEl = document.getElementById('splashScreen');
+splashEl.addEventListener('touchstart', initSplashMusic, { once: true });
+splashEl.addEventListener('mouseenter', initSplashMusic, { once: true });
 
 function startGame() {
   const n = document.getElementById('userNameInput').value.trim();
