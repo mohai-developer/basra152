@@ -3,14 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0e5d32">
 <meta name="apple-mobile-web-app-title" content="باصرة">
 <link rel="manifest" href="manifest.json">
-
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8...">
 
 <title>لعبة باصرة 152</title>
@@ -21,22 +19,22 @@
 * {box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{margin:0;padding:0;background-color:var(--bg-color);font-family:'Segoe UI',Tahoma,sans-serif;overflow:hidden;user-select:none;display:flex;flex-direction:column;height:100vh;}
 
-/* تنسيق زر التثبيت ليتناسب مع تصميمك */
+/* تنسيق زر التثبيت المضاف ليتناسب مع اللعبة */
 #pwa-install-btn {
-    display: none;
     position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 9999;
+    top: 10px;
+    left: 10px;
+    z-index: 10000;
     background: #f1c40f;
     color: #2c3e50;
     border: 2px solid #fff;
     padding: 8px 15px;
     border-radius: 20px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 13px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     cursor: pointer;
+    display: none; /* يظهر فقط عند الحاجة */
 }
 
 #game-container{flex:1;position:relative;width:100%;max-width:1000px;margin:0 auto;}
@@ -60,7 +58,7 @@ button:active{transform:translateY(2px);box-shadow:0 2px 0 #d4ac0d;}
 </head>
 <body>
 
-<button id="pwa-install-btn">📲 تثبيت اللعبة</button>
+<button id="pwa-install-btn" onclick="installApp()">📲 تثبيت اللعبة</button>
 
 <div id="game-container">
   <div id="cpu-area" class="area"></div>
@@ -78,26 +76,29 @@ button:active{transform:translateY(2px);box-shadow:0 2px 0 #d4ac0d;}
 </div>
 
 <script>
-// --- كود PWA للزر ---
+// كود منطق الزر المضاف
 let deferredPrompt;
-const installBtn = document.getElementById('pwa-install-btn');
 window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'block';
-});
-installBtn.addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') installBtn.style.display = 'none';
-    deferredPrompt = null;
-  } else {
-    alert("للايفون: اضغط على زر 'مشاركة' ثم 'إضافة إلى الشاشة الرئيسية' ➕");
-  }
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('pwa-install-btn').style.display = 'block';
 });
 
-// --- بداية كود اللعبة الأصلي (بدون أي تغيير) ---
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                document.getElementById('pwa-install-btn').style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    } else {
+        alert("للايفون: اضغط على زر 'مشاركة' ثم اختر 'إضافة إلى الشاشة الرئيسية'.");
+    }
+}
+
+// --- بداية كود لعبتك الأصلي (بالحرف الواحد) ---
 const suits=['♠','♥','♦','♣'];
 const types=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 let deck=[],tableCards=[],userHand=[],cpuHand=[],lastEater=null;
