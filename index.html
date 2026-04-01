@@ -19,22 +19,21 @@
 * {box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{margin:0;padding:0;background-color:var(--bg-color);font-family:'Segoe UI',Tahoma,sans-serif;overflow:hidden;user-select:none;display:flex;flex-direction:column;height:100vh;}
 
-/* تنسيق زر التثبيت المضاف ليتناسب مع اللعبة */
+/* زر التثبيت - وضعته في مكان لا يغطي أي شيء من اللعبة */
 #pwa-install-btn {
+    display: none;
     position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 10000;
+    top: 5px;
+    left: 5px;
+    z-index: 10001;
     background: #f1c40f;
     color: #2c3e50;
-    border: 2px solid #fff;
-    padding: 8px 15px;
-    border-radius: 20px;
+    border: 1px solid #fff;
+    padding: 5px 10px;
+    border-radius: 15px;
     font-weight: bold;
-    font-size: 13px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    font-size: 11px;
     cursor: pointer;
-    display: none; /* يظهر فقط عند الحاجة */
 }
 
 #game-container{flex:1;position:relative;width:100%;max-width:1000px;margin:0 auto;}
@@ -58,7 +57,7 @@ button:active{transform:translateY(2px);box-shadow:0 2px 0 #d4ac0d;}
 </head>
 <body>
 
-<button id="pwa-install-btn" onclick="installApp()">📲 تثبيت اللعبة</button>
+<button id="pwa-install-btn" onclick="installApp()">📲 تثبيت</button>
 
 <div id="game-container">
   <div id="cpu-area" class="area"></div>
@@ -74,174 +73,3 @@ button:active{transform:translateY(2px);box-shadow:0 2px 0 #d4ac0d;}
     <button onclick="resetGame()">لعبة جديدة</button>
   </div>
 </div>
-
-<script>
-// كود منطق الزر المضاف
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('pwa-install-btn').style.display = 'block';
-});
-
-function installApp() {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                document.getElementById('pwa-install-btn').style.display = 'none';
-            }
-            deferredPrompt = null;
-        });
-    } else {
-        alert("للايفون: اضغط على زر 'مشاركة' ثم اختر 'إضافة إلى الشاشة الرئيسية'.");
-    }
-}
-
-// --- بداية كود لعبتك الأصلي (بالحرف الواحد) ---
-const suits=['♠','♥','♦','♣'];
-const types=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-let deck=[],tableCards=[],userHand=[],cpuHand=[],lastEater=null;
-let userScore=0,cpuScore=0,userBasras=0,cpuBasras=0;
-
-const phrases={
-  cpu_start:["مستعد للهزيمة؟ 😏","الباصرة لعبة الأذكياء، خلنا نشوف شطارتك! 🃏","جاك الموت يا تارك الصلاة! 😂","جهز نفسك، البواصر جاية الطريق! 👀"],
-  cpu_eat_10D:["عشرة الديمن في الجيب! حلاوة النقاط! 🃏"],
-  cpu_eat_2C:["اثنين السبيت! نقطتين ببلاش! 😂"],
-  cpu_eat_valuable:["الإكة ما تنفع مع الذكي! 😏","شكراً على النقاط يا كريم! 🃏","راحت عليك الحلوة! 👀","صارت الحلوة في الجيب! 😄"],
-  user_basra:["لا تفرح، اللعبة طويلة! 😏","بسيطة خيرها في غيرها! 🃏","العبرة بالنهاية مو بالباصرة! 😄","تمتع فيها! 😂","يصير خير، اللعبة ما خلصت! 👀"],
-  user_basra_jack:["حظ مو شطارة! 😏","استمتع، ما راح تكررها! 😂","عشرين نقطة؟ يصير خير! 👀","العبرة بالنهاية مو بالولد! 🃏","زين زين، اللعبة ما خلصت! 😄"],
-  user_eat:["قش يا ولد قش! 😏","استمتع! 😂","يصير خير، عندي ردها! 🃏","عادي اصلاً 👀","العبرة بالنهاية! 😄","ولا يهمني 😒","تستاهل 👏","حركااات 👏"]
-};
-const lastUsed = {};
-function getRandom(key) {
-  const list=phrases[key]; if(!list||!list.length) return null; if(list.length===1) return list[0];
-  let idx; do{idx=Math.floor(Math.random()*list.length);}while(idx===lastUsed[key]);
-  lastUsed[key]=idx; return list[idx];
-}
-function speakPhrase(key) { const txt=getRandom(key); if(txt) speak(txt); }
-function speakEatValuable(card) {
-  if(card.type==='10'&&card.suit==='♦') speak(phrases.cpu_eat_10D[0]);
-  else if(card.type==='2'&&card.suit==='♣') speak(phrases.cpu_eat_2C[0]);
-  else if(card.type==='A'||card.type==='J'||card.type==='Q'||card.type==='K') speakPhrase('cpu_eat_valuable');
-}
-function speak(t){
-  const m=new SpeechSynthesisUtterance(t);
-  m.lang='ar-SA'; m.rate=1;
-  window.speechSynthesis.cancel(); window.speechSynthesis.speak(m);
-  const mb=document.getElementById('message-box');
-  mb.innerText=t; mb.style.display='block';
-  setTimeout(()=>mb.style.display='none',2500);
-}
-
-function initDeck(){
-  deck=[];
-  for(let s of suits)for(let t of types)deck.push({suit:s,type:t,val:getVal(t)});
-  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-}
-function getVal(t){if(t==='A')return 1;if(t==='J')return 11;if(t==='Q')return 12;if(t==='K')return 13;return parseInt(t);}
-function renderCard(c,back=false){
-  const d=document.createElement('div'); d.className='card';
-  if(back){d.classList.add('back');}
-  else{
-    d.classList.add((c.suit==='♥'||c.suit==='♦')?'red':'black');
-    d.innerHTML=`<div class="suit-top-left">${c.type}${c.suit}</div><div>${c.type}${c.suit}</div><div class="suit-bottom-right">${c.type}${c.suit}</div>`;
-  }
-  return d;
-}
-function deal(){
-  if(deck.length===0){endGame();return;}
-  for(let i=0;i<4;i++)userHand.push(deck.pop());
-  for(let i=0;i<4;i++)cpuHand.push(deck.pop());
-  updateUI();
-}
-function updateUI(){
-  const ua=document.getElementById('user-area');ua.innerHTML='';
-  userHand.forEach((c,i)=>{const rd=renderCard(c);rd.onclick=()=>playCard(i);ua.appendChild(rd);});
-  const ca=document.getElementById('cpu-area');ca.innerHTML='';
-  cpuHand.forEach(()=>ca.appendChild(renderCard(null,true)));
-  const ta=document.getElementById('table-area');ta.innerHTML='';
-  tableCards.forEach(c=>ta.appendChild(renderCard(c)));
-  document.getElementById('cpu-score').innerText=cpuScore;
-  document.getElementById('user-score').innerText=userScore;
-  document.getElementById('cpu-basras').innerText=cpuBasras;
-  document.getElementById('user-basras').innerText=userBasras;
-  document.getElementById('cards-left').innerText=`الأوراق المتبقية: ${deck.length}`;
-}
-function playCard(idx){
-  const c=userHand.splice(idx,1)[0];
-  const eaten=checkEat(c);
-  if(eaten.length>0){
-    if(tableCards.length===eaten.length && c.type!=='J') {userBasras++; userScore+=10; speakPhrase('user_basra');}
-    else if(tableCards.length===eaten.length && c.type==='J') {userBasras++; userScore+=20; speakPhrase('user_basra_jack');}
-    else speakPhrase('user_eat');
-    userScore+=calcPoints(c,eaten); tableCards=tableCards.filter(tc=>!eaten.includes(tc)); lastEater='user';
-  }else{tableCards.push(c);}
-  updateUI();
-  if(userHand.length===0&&cpuHand.length===0) {if(deck.length>0)setTimeout(deal,600);else setTimeout(endGame,600);}
-  else setTimeout(cpuPlay,800);
-}
-function cpuPlay(){
-  if(cpuHand.length===0)return;
-  let bestIdx=0,maxP=-1,bestEaten=[];
-  cpuHand.forEach((c,i)=>{
-    const eaten=checkEat(c); const p=calcPoints(c,eaten);
-    if(p>maxP){maxP=p;bestIdx=i;bestEaten=eaten;}
-  });
-  const c=cpuHand.splice(bestIdx,1)[0];
-  if(bestEaten.length>0){
-    if(tableCards.length===bestEaten.length && c.type!=='J') {cpuBasras++; cpuScore+=10; speak("باصرة! 😏");}
-    else if(tableCards.length===bestEaten.length && c.type==='J') {cpuBasras++; cpuScore+=20; speak("باصرة بالولد! 🔥");}
-    else speakEatValuable(c);
-    cpuScore+=maxP; tableCards=tableCards.filter(tc=>!bestEaten.includes(tc)); lastEater='cpu';
-  }else{tableCards.push(c);}
-  updateUI();
-  if(userHand.length===0&&cpuHand.length===0&&deck.length>0)setTimeout(deal,600);
-  else if(userHand.length===0&&cpuHand.length===0&&deck.length===0)setTimeout(endGame,600);
-}
-function checkEat(c){
-  if(c.type==='J')return [...tableCards];
-  let eaten=[];
-  if(tableCards.some(tc=>tc.type===c.type)) eaten=tableCards.filter(tc=>tc.type===c.type);
-  if(c.type!=='J'){
-    const others=tableCards.filter(tc=>tc.type!==c.type&&tc.val<11);
-    const sums=findSums(others,c.val);
-    if(sums.length>0) eaten=[...eaten,...sums];
-  }
-  return eaten;
-}
-function findSums(cards,target){
-  for(let i=1;i<(1<<cards.length);i++){
-    let combo=[],sum=0;
-    for(let j=0;j<cards.length;j++)if((i>>j)&1){combo.push(cards[j]);sum+=cards[j].val;}
-    if(sum===target)return combo;
-  }
-  return [];
-}
-function calcPoints(c,eaten){
-  if(eaten.length===0)return 0;
-  let p=0; [c,...eaten].forEach(card=>{
-    if(card.type==='10'&&card.suit==='♦')p+=3;
-    else if(card.type==='2'&&card.suit==='♣')p+=2;
-    else if(card.type==='A')p+=1;
-    else if(card.type==='J')p+=1;
-  });
-  return p;
-}
-function endGame(){
-  if(lastEater==='user')userScore+=calcPoints({type:''},tableCards);
-  else cpuScore+=calcPoints({type:''},tableCards);
-  tableCards=[]; updateUI();
-  const win=userScore>cpuScore?"مبروك فزت! 🎉":"هاردلك، الكمبيوتر فاز! 🤖";
-  setTimeout(()=>alert(`انتهت اللعبة!\nنقاطك: ${userScore}\nنقاط الكمبيوتر: ${cpuScore}\n${win}`),500);
-}
-function resetGame(){
-  userScore=0;cpuScore=0;userBasras=0;cpuBasras=0;tableCards=[];userHand=[];cpuHand=[];lastEater=null;
-  initDeck();
-  for(let i=0;i<4;i++)tableCards.push(deck.pop());
-  deal(); speakPhrase('cpu_start');
-}
-resetGame();
-</script>
-</body>
-</html>
